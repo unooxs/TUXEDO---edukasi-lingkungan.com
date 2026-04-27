@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TUXEDO — Tanda Pengenal Tumbuhan Pintar</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script>
+tailwind.config={theme:{extend:{colors:{forest:{50:'#f0ebe3',100:'#e0d8c8',200:'#b8a882',300:'#8a7a54',400:'#5c6e3a',500:'#3d5a27',600:'#2d5016',700:'#1a3c2a',800:'#142e20',900:'#0d1f17',950:'#081510'},amber:{400:'#d4a843',500:'#c49a38',600:'#a8832e'}},fontFamily:{display:['Playfair Display','serif'],body:['Source Sans 3','sans-serif']}}}}
+</script>
+<style>
+:root{--bg:#0d1f17;--bg-light:#142e20;--fg:#f0ebe3;--fg-muted:#b8a882;--accent:#d4a843;--accent-hover:#e0b850;--card:#142e20;--border:#2d5016}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scrollbar-width:thin;scrollbar-color:var(--accent) var(--bg)}
+body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--fg);overflow-x:hidden}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--accent);border-radius:4px}
+#hero-canvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none}
+.hero-gradient{background:radial-gradient(ellipse at 20% 50%,rgba(26,60,42,0.5) 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,rgba(212,168,67,0.08) 0%,transparent 40%),linear-gradient(180deg,rgba(13,31,23,0.2) 0%,rgba(13,31,23,0.98) 100%)}
+.section-title{font-family:'Playfair Display',serif;font-weight:900;letter-spacing:-0.02em;line-height:1.1}
+.section-divider{width:80px;height:3px;background:linear-gradient(90deg,var(--accent),transparent);margin:1rem 0 2rem}
+.nav-fixed{backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);background:rgba(13,31,23,0.88);border-bottom:1px solid rgba(45,80,22,0.3)}
+.nav-link{position:relative;color:var(--fg-muted);transition:color .3s;font-weight:600;font-size:.9rem}
+.nav-link:hover,.nav-link.active{color:var(--accent)}
+.nav-link::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:2px;background:var(--accent);transition:width .3s}
+.nav-link:hover::after,.nav-link.active::after{width:100%}
+.btn-primary{background:linear-gradient(135deg,var(--accent) 0%,#a8832e 100%);color:#0d1f17;font-weight:700;padding:.75rem 2rem;border-radius:8px;border:none;cursor:pointer;transition:all .3s;display:inline-flex;align-items:center;gap:.5rem;font-family:'Source Sans 3',sans-serif;font-size:1rem}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(212,168,67,0.3)}
+.btn-outline{background:transparent;color:var(--accent);font-weight:700;padding:.75rem 2rem;border-radius:8px;border:2px solid var(--accent);cursor:pointer;transition:all .3s;display:inline-flex;align-items:center;gap:.5rem;font-family:'Source Sans 3',sans-serif;font-size:1rem}
+.btn-outline:hover{background:var(--accent);color:#0d1f17;transform:translateY(-2px)}
+.tree-card{background:var(--card);border:1px solid rgba(45,80,22,0.5);border-radius:12px;overflow:hidden;transition:all .4s cubic-bezier(.25,.46,.45,.94)}
+.tree-card:hover{transform:translateY(-8px);border-color:var(--accent);box-shadow:0 20px 40px rgba(0,0,0,0.4),0 0 30px rgba(212,168,67,0.1)}
+.law-card{background:linear-gradient(135deg,var(--card) 0%,rgba(26,60,42,0.6) 100%);border:1px solid rgba(45,80,22,0.4);border-left:4px solid var(--accent);border-radius:8px;padding:1.5rem;transition:all .3s ease}
+.law-card:hover{border-left-color:var(--accent-hover);box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+.penalty-box{background:linear-gradient(135deg,rgba(212,168,67,0.1) 0%,rgba(212,168,67,0.02) 100%);border:1px solid rgba(212,168,67,0.3);border-radius:8px;padding:1.25rem}
+.video-card{background:var(--card);border:1px solid rgba(45,80,22,0.4);border-radius:12px;overflow:hidden;transition:all .3s ease;cursor:pointer}
+.video-card:hover{border-color:var(--accent);transform:scale(1.02)}
+.reveal{opacity:0;transform:translateY(40px);transition:all .8s cubic-bezier(.25,.46,.45,.94)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.stat-box{background:rgba(20,46,32,0.8);border:1px solid rgba(45,80,22,0.4);border-radius:12px;padding:1.5rem;text-align:center;backdrop-filter:blur(10px)}
+.chart-control{background:var(--card);border:1px solid var(--border);color:var(--fg);padding:.5rem 1.25rem;border-radius:6px;cursor:pointer;transition:all .3s;font-family:'Source Sans 3',sans-serif;font-size:.9rem}
+.chart-control:hover,.chart-control.active{background:var(--accent);color:#0d1f17;border-color:var(--accent)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9998;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal-content{background:var(--card);border:1px solid var(--border);border-radius:12px;max-width:640px;width:90%;max-height:85vh;overflow-y:auto;padding:2rem;transform:scale(.9);transition:transform .3s}
+.modal-overlay.show .modal-content{transform:scale(1)}
+.mobile-menu{position:fixed;top:0;right:0;width:280px;height:100vh;background:rgba(13,31,23,0.98);backdrop-filter:blur(20px);z-index:10001;transform:translateX(100%);transition:transform .3s;border-left:1px solid var(--border);padding:5rem 2rem 2rem}
+.mobile-menu.open{transform:translateX(0)}
+.mobile-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10000;opacity:0;pointer-events:none;transition:opacity .3s}
+.mobile-overlay.open{opacity:1;pointer-events:all}
+.toast{position:fixed;bottom:2rem;right:2rem;background:var(--card);border:1px solid var(--accent);border-radius:8px;padding:1rem 1.5rem;z-index:9999;transform:translateX(120%);transition:transform .4s cubic-bezier(.25,.46,.45,.94);max-width:340px}
+.toast.show{transform:translateX(0)}
+.bg-dots{background-image:radial-gradient(circle at 1px 1px,rgba(45,80,22,0.12) 1px,transparent 0);background-size:40px 40px}
+@keyframes floatSlow{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+@keyframes pulseGlow{0%,100%{box-shadow:0 0 20px rgba(212,168,67,0.1)}50%{box-shadow:0 0 40px rgba(212,168,67,0.25)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+@media(max-width:768px){.nav-desktop{display:none!important}.mobile-toggle{display:flex!important}}
+@media(min-width:769px){.mobile-toggle{display:none!important}}
+</style>
+</head>
+<body>
+
+<!-- NAVIGASI -->
+<nav id="navbar" class="fixed top-0 left-0 w-full z-[9990] transition-all duration-300">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+<a href="#beranda" class="flex items-center gap-2 z-[9999]">
+<div class="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+<i class="fa-solid fa-leaf text-forest-900 text-sm"></i>
+</div>
+<span class="font-display font-bold text-lg text-amber-400 tracking-tight">TUXEDO</span>
+</a>
+<div class="nav-desktop flex items-center gap-6">
+<a href="#beranda" class="nav-link" data-section="beranda">Beranda</a>
+<a href="#deforestasi" class="nav-link" data-section="deforestasi">Deforestasi</a>
+<a href="#spesies" class="nav-link" data-section="spesies">Spesies Pohon</a>
+<a href="#hukum" class="nav-link" data-section="hukum">Hukum</a>
+<a href="#video" class="nav-link" data-section="video">Video</a>
+<a href="#simulasi" class="nav-link" data-section="simulasi">Simulasi</a>
+</div>
+<button class="mobile-toggle w-10 h-10 rounded-lg border border-forest-600 flex items-center justify-center text-forest-100 z-[9999]" onclick="toggleMobile()" aria-label="Menu">
+<i class="fa-solid fa-bars"></i>
+</button>
+</div>
+</nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobile()"></div>
+<div class="mobile-menu" id="mobileMenu">
+<div class="flex flex-col gap-4">
+<a href="#beranda" class="text-forest-100 font-semibold text-lg hover:text-amber-400 transition-colors" onclick="toggleMobile()">Beranda</a>
+<a href="#deforestasi" class="text-forest-100 font-semibold text-lg hover:text-amber-400 transition-colors" onclick="toggleMobile()">Deforestasi</a>
+<a href="#spesies" class="text-forest-100 font-semibold text-lg hover:text-amber-400 transition-colors" onclick="toggleMobile()">Spesies Pohon</a>
+<a href="#hukum" class="text-forest-100 font-semibold text-lg hover:text-amber-400 transition-colors" onclick="toggleMobile()">Hukum & Regulasi</a>
+<a href="#video" class="text-forest-100 font-semibold text-lg hover:text-amber-400 transition-colors" onclick="toggleMobile()">Video Edukasi</a>
+<a href="#simulasi" class="text-forest-100 font-semibold text-lg hover:text-amber-400 transition-colors" onclick="toggleMobile()">Simulasi Dampak</a>
+</div>
+</div>
+
+<!-- ============================================ -->
+<!-- SECTION 1: BERANDA / HOME                    -->
+<!-- ============================================ -->
+<section id="beranda" class="relative min-h-screen flex items-center overflow-hidden">
+<canvas id="hero-canvas"></canvas>
+<div class="hero-gradient absolute inset-0 z-[2]"></div>
+<div class="relative z-[3] max-w-7xl mx-auto px-4 sm:px-6 py-32 w-full">
+<div class="max-w-3xl">
+<div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-amber-400/30 bg-amber-400/5 text-amber-400 text-sm font-semibold mb-6">
+<i class="fa-solid fa-seedling"></i>
+Inisiatif Edukasi Ekosistem Kalimantan Timur
+</div>
+<h1 class="section-title text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-forest-50 mb-6">
+<span class="text-amber-400">TUXEDO</span><br>
+<span class="text-3xl sm:text-4xl md:text-5xl font-bold" style="color:var(--fg-muted)">Tanda pengenal tumbuhan,</span><br>
+<span class="text-3xl sm:text-4xl md:text-5xl font-bold" style="color:var(--fg-muted)">Edukasi X-tra Ekosistem,</span><br>
+<span class="text-3xl sm:text-4xl md:text-5xl font-bold" style="color:var(--fg-muted)">cegah Deforestasi Operasional</span>
+</h1>
+<p class="text-forest-200/80 text-lg sm:text-xl leading-relaxed mb-8 max-w-2xl">
+TUXEDO hadir sebagai platform edukasi digital yang mengintegrasikan <strong class="text-amber-400">Tanda Pengenal Tumbuhan Pintar</strong> dengan konten pembelajaran interaktif untuk meningkatkan literasi ekosistem masyarakat Kalimantan Timur. Kami percaya bahwa kesadaran lahir dari pemahaman — dan pemahaman dimulai dari edukasi yang tepat, mudah diakses, dan relevan.
+</p>
+<div class="flex flex-wrap gap-4 mb-12">
+<a href="#deforestasi" class="btn-primary"><i class="fa-solid fa-book-open"></i> Mulai Belajar</a>
+<a href="#simulasi" class="btn-outline"><i class="fa-solid fa-chart-line"></i> Lihat Simulasi</a>
+</div>
+<!-- Statistik Ringkas -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+<div class="stat-box">
+<div class="text-2xl sm:text-3xl font-display font-bold text-amber-400" data-count="15.6">0</div>
+<div class="text-xs sm:text-sm text-forest-200/60 mt-1">Juta Hektar Lahan Kaltim</div>
+</div>
+<div class="stat-box">
+<div class="text-2xl sm:text-3xl font-display font-bold text-red-400" data-count="180">0</div>
+<div class="text-xs sm:text-sm text-forest-200/60 mt-1">Ribu Ha Hilang/Tahun</div>
+</div>
+<div class="stat-box">
+<div class="text-2xl sm:text-3xl font-display font-bold text-amber-400" data-count="1200">0</div>
+<div class="text-xs sm:text-sm text-forest-200/60 mt-1">+ Spesies Tumbuhan</div>
+</div>
+<div class="stat-box">
+<div class="text-2xl sm:text-3xl font-display font-bold text-red-400" data-count="42">0</div>
+<div class="text-xs sm:text-sm text-forest-200/60 mt-1">% Hutan Terdegradasi</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Scroll indicator -->
+<div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-[3] flex flex-col items-center gap-2 text-forest-200/40 text-sm">
+<span>Gulir ke bawah</span>
+<i class="fa-solid fa-chevron-down animate-bounce"></i>
+</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SECTION 2: DEFORESTASI                       -->
+<!-- ============================================ -->
+<section id="deforestasi" class="relative py-20 sm:py-28 bg-dots">
+<div class="absolute top-0 left-1/4 w-96 h-96 bg-amber-400/5 rounded-full blur-[100px] pointer-events-none"></div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 relative">
+<div class="reveal text-center mb-16">
+<span class="inline-block px-3 py-1 rounded-full bg-red-500/10 text-red-400 text-sm font-semibold mb-4 border border-red-500/20"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Krisis Nyata</span>
+<h2 class="section-title text-3xl sm:text-4xl md:text-5xl text-forest-50 mb-2">Memahami Deforestasi</h2>
+<div class="section-divider mx-auto"></div>
+<p class="text-forest-200/70 text-lg max-w-2xl mx-auto">Deforestasi bukan sekadar soal pohon yang ditebang — ia menggerus fondasi kehidupan, mengubah iklim, dan menghilangkan masa depan bersama.</p>
+</div>
+
+<!-- Definisi -->
+<div class="reveal mb-16">
+<div class="bg-gradient-to-br from-forest-800 to-forest-900 border border-forest-600/40 rounded-2xl p-6 sm:p-10">
+<div class="flex items-start gap-4 mb-6">
+<div class="w-12 h-12 rounded-xl bg-amber-400/10 flex items-center justify-center flex-shrink-0">
+<i class="fa-solid fa-book text-amber-400 text-xl"></i>
+</div>
+<div>
+<h3 class="font-display font-bold text-2xl text-forest-50 mb-1">Apa Itu Deforestasi?</h3>
+<div class="section-divider"></div>
+</div>
+</div>
+<p class="text-forest-200/80 leading-relaxed mb-4">
+<strong class="text-forest-50">Deforestasi</strong> adalah proses penghilangan tutupan hutan secara permanen atau dalam jangka panjang akibat aktivitas manusia maupun faktor alam, sehingga lahan tersebut berubah fungsi menjadi non-hutan. Menurut <strong class="text-amber-400">FAO (Food and Agriculture Organization)</strong>, deforestasi terjadi ketika tutupan pohon turun di bawah 10% dari luas lahan dengan perubahan yang bersifat permanen.
+</p>
+<p class="text-forest-200/80 leading-relaxed mb-4">
+Deforestasi <strong class="text-forest-50">berbeda dari degradasi hutan</strong>. Degradasi hutan merujuk pada penurunan kualitas hutan — seperti penurunan kepadatan pohon, kerusakan struktur kanopi, atau hilangnya keanekaragaman spesies — tanpa mengubah status lahannya menjadi non-hutan. Sementara deforestasi mengubah status lahan secara total, misalnya dari hutan menjadi perkebunan, permukiman, atau tambang terbuka.
+</p>
+<p class="text-forest-200/80 leading-relaxed">
+Di <strong class="text-amber-400">Kalimantan Timur</strong>, deforestasi berlangsung dengan laju yang mengkhawatirkan. Provinsi yang dulunya ditutupi hutan tropis dataran rendah seluas jutaan hektar kini kehilangan sebagian besar tutupan hutannya. Data dari Global Forest Watch mencatat bahwa Kaltim merupakan salah satu provinsi dengan tingkat deforestasi tertinggi di Indonesia, terutama akibat ekspansi perkebunan sawit, pertambangan batubara, dan pembangunan IKN (Ibu Kota Nusantara).
+</p>
+</div>
+</div>
+
+<!-- Penyebab -->
+<div class="reveal mb-16">
+<h3 class="font-display font-bold text-2xl sm:text-3xl text-forest-50 mb-2 flex items-center gap-3"><i class="fa-solid fa-magnifying-glass text-amber-400"></i> Penyebab Utama Deforestasi</h3>
+<div class="section-divider"></div>
+<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
+<div class="law-card border-l-red-500" style="border-left-color:#ef4444">
+<div class="flex items-center gap-3 mb-3"><i class="fa-solid fa-tree text-red-400 text-lg"></i><h4 class="font-bold text-forest-50">Konversi Lahan Perkebunan</h4></div>
+<p class="text-forest-200/70 text-sm leading-relaxed">Ekspansi perkebunan kelapa sawit menjadi penyebab terbesar deforestasi di Kalimantan. Hutan dibabat habis untuk memberi ruang pada monokultur sawit yang menggantikan ekosistem kompleks dengan perkebunan tunggal. Kaltim memiliki salah satu luas perkebunan sawit terbesar di Indonesia.</p>
+</div>
+<div class="law-card" style="border-left-color:#f97316">
+<div class="flex items-center gap-3 mb-3"><i class="fa-solid fa-helmet-safety text-orange-400 text-lg"></i><h4 class="font-bold text-forest-50">Pertambangan Batubara</h4></div>
+<p class="text-forest-200/70 text-sm leading-relaxed">Kaltim adalah penghasil batubara terbesar di Indonesia. Metode tambang terbuka (open-pit mining) menghancurkan lapisan tanah atas, menghilangkan vegetasi, dan mencemari sungai. Pasca-tambang, lahan sulit direhabilitasi ke kondisi hutan semula.</p>
+</div>
+<div class="law-card" style="border-left-color:#eab308">
+<div class="flex items-center gap-3 mb-3"><i class="fa-solid fa-fire text-yellow-400 text-lg"></i><h4 class="font-bold text-forest-50">Kebakaran Hutan & Lahan</h4></div>
+<p class="text-forest-200/70 text-sm leading-relaxed">Praktik membakar lahan untuk membersihkan area perkebunan (slash-and-burn) sering menyebabkan kebakaran tak terkendali. Kebakaran hutan 2015 dan 2019 menghanguskan jutaan hektar di Kalimantan, menciptakan kabut asap yang melumpuhkan regional.</p>
+</div>
+<div class="law-card" style="border-left-color:#8b5cf6">
+<div class="flex items-center gap-3 mb-3"><i class="fa-solid fa-road text-violet-400 text-lg"></i><h4 class="font-bold text-forest-50">Pembangunan Infrastruktur</h4></div>
+<p class="text-forest-200/70 text-sm leading-relaxed">Pembangunan jalan, jembatan, pelabuhan, dan fasilitas pendukung IKN memerlukan pembukaan hutan secara masif. Infrastruktur juga membuka akses ke area hutan terpencil yang sebelumnya sulit dijangkau, memicu deforestasi sekunder.</p>
+</div>
+<div class="law-card" style="border-left-color:#06b6d4">
+<div class="flex items-center gap-3 mb-3"><i class="fa-solid fa-axe text-cyan-400 text-lg"></i><h4 class="font-bold text-forest-50">Penebangan Liar (Illegal Logging)</h4></div>
+<p class="text-forest-200/70 text-sm leading-relaxed">Penebangan kayu tanpa izin masih marak di kawasan hutan Kaltim. Spesies bernilai tinggi seperti Ulin, Meranti, dan Gaharu menjadi target utama. Illegal logging menyumbang hingga 80% dari total penebangan di beberapa wilayah Kalimantan.</p>
+</div>
+<div class="law-card" style="border-left-color:#ec4899">
+<div class="flex items-center gap-3 mb-3"><i class="fa-solid fa-house-chimney text-pink-400 text-lg"></i><h4 class="font-bold text-forest-50">Permukiman & Transmigrasi</h4></div>
+<p class="text-forest-200/70 text-sm leading-relaxed">Pertumbuhan penduduk dan program transmigrasi historis mendorong konversi hutan menjadi permukiman. Urban sprawl dari kota-kota besar seperti Samarinda dan Balikpapan terus memakan area perbatasan hutan.</p>
+</div>
+</div>
+</div>
+
+<!-- Dampak -->
+<div class="reveal">
+<h3 class="font-display font-bold text-2xl sm:text-3xl text-forest-50 mb-2 flex items-center gap-3"><i class="fa-solid fa-bolt text-red-400"></i> Dampak Deforestasi</h3>
+<div class="section-divider"></div>
+<p class="text-forest-200/70 leading-relaxed mb-8 max-w-3xl">Dampak deforestasi bersifat kaskading — satu dampak memicu dampak lainnya dalam rantai yang sulit diputus. Berikut adalah dampak-dampak utama yang sudah terbukti secara ilmiah:</p>
+
+<div class="grid md:grid-cols-2 gap-6">
+<div class="bg-forest-800/60 border border-red-500/20 rounded-xl p-6">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center"><i class="fa-solid fa-temperature-arrow-up text-red-400"></i></div>
+<h4 class="font-bold text-forest-50 text-lg">Perubahan Iklim Global</h4>
+</div>
+<p class="text-forest-200/70 text-sm leading-relaxed">Hutan tropis Kalimantan menyimpan miliaran ton karbon. Saat ditebang dan dibakar, karbon ini dilepaskan sebagai CO2 ke atmosfer. Indonesia merupakan salah satu emitor terbesar dunia dari sektor penggunaan lahan, dan deforestasi Kaltim berkontribusi signifikan terhadap pemanasan global.</p>
+</div>
+<div class="bg-forest-800/60 border border-orange-500/20 rounded-xl p-6">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center"><i class="fa-solid fa-paw text-orange-400"></i></div>
+<h4 class="font-bold text-forest-50 text-lg">Kehilangan Keanekaragaman Hayati</h4>
+</div>
+<p class="text-forest-200/70 text-sm leading-relaxed">Hutan Kalimantan adalah rumah bagi Orangutan, Bekantan, Beruang Madu, Rangkong, dan ribuan spesies lainnya. Deforestasi menghancurkan habitat, memutus koridor migrasi, dan mendorong spesies menuju kepunahan. Setiap hektar hutan yang hilang berarti kehilangan puluhan spesies yang mungkin belum teridentifikasi.</p>
+</div>
+<div class="bg-forest-800/60 border border-yellow-500/20 rounded-xl p-6">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center"><i class="fa-solid fa-water text-yellow-400"></i></div>
+<h4 class="font-bold text-forest-50 text-lg">Banjir, Longsor & Kekeringan</h4>
+</div>
+<p class="text-forest-200/70 text-sm leading-relaxed">Hutan berfungsi sebagai spons alami yang menyerap dan menyimpan air. Tanpa hutan, air hujan langsung mengalir ke sungai menyebabkan banjir di musim hujan. Di musim kemarau, sumber mata air mengering. Longsor menjadi ancaman di area perbukitan yang gundul.</p>
+</div>
+<div class="bg-forest-800/60 border border-pink-500/20 rounded-xl p-6">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded-lg bg-pink-500/10 flex items-center justify-center"><i class="fa-solid fa-people-group text-pink-400"></i></div>
+<h4 class="font-bold text-forest-50 text-lg">Ancaman terhadap Masyarakat Adat</h4>
+</div>
+<p class="text-forest-200/70 text-sm leading-relaxed">Suku Dayak dan masyarakat adat lainnya di Kaltim telah hidup selaras dengan hutan selama ribuan tahun. Deforestasi mengambil tanah ulayat mereka, menghancurkan sumber pangan dan obat-obatan tradisional, serta mengikis identitas budaya yang terikat erat dengan hutan.</p>
+</div>
+<div class="bg-forest-800/60 border border-cyan-500/20 rounded-xl p-6">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center"><i class="fa-solid fa-smog text-cyan-400"></i></div>
+<h4 class="font-bold text-forest-50 text-lg">Polusi Udara & Kabut Asap</h4>
+</div>
+<p class="text-forest-200/70 text-sm leading-relaxed">Kebakaran hutan akibat deforestasi menghasilkan partikel halus (PM2.5) yang berbahaya bagi kesehatan. Kabut asap dari Kalimantan sering melumpuhkan aktivitas di provinsi tetangga bahkan negara lain, menyebabkan ISK, gangguan pernapasan, dan kematian dini.</p>
+</div>
+<div class="bg-forest-800/60 border border-emerald-500/20 rounded-xl p-6">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center"><i class="fa-solid fa-money-bill-trend-up text-emerald-400"></i></div>
+<h4 class="font-bold text-forest-50 text-lg">Kerugian Ekonomi Jangka Panjang</h4>
+</div>
+<p class="text-forest-200/70 text-sm leading-relaxed">Meski deforestasi menghasilkan keuntungan ekonomi jangka pendek, kerugiannya jauh lebih besar: biaya penanganan banjir, kerugian sektor pariwisata, penurunan hasil perikanan akibat sedimentasi sungai, dan hilangnya potensi jasa ekosistem yang nilainya triliunan rupiah per tahun.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SECTION 3: DATA SPESIES POHON                -->
+<!-- ============================================ -->
+<section id="spesies" class="relative py-20 sm:py-28" style="background:linear-gradient(180deg,var(--bg) 0%,var(--bg-light) 50%,var(--bg) 100%)">
+<div class="max-w-7xl mx-auto px-4 sm:px-6">
+<div class="reveal text-center mb-12">
+<span class="inline-block px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-sm font-semibold mb-4 border border-emerald-500/20"><i class="fa-solid fa-leaf mr-1"></i> Keanekaragaman Hayati</span>
+<h2 class="section-title text-3xl sm:text-4xl md:text-5xl text-forest-50 mb-2">Spesies Pohon Kalimantan Timur</h2>
+<div class="section-divider mx-auto"></div>
+<p class="text-forest-200/70 text-lg max-w-2xl mx-auto">Mengenal pohon-pohon di sekitar kita adalah langkah pertama mencintai dan melindungi hutan. Berikut 12 spesies pohon yang dapat ditemukan di Kaltim beserta data identitasnya.</p>
+</div>
+<div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" id="speciesGrid">
+<!-- Diisi oleh JavaScript -->
+</div>
+</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SECTION 4: HUKUM & REGULASI                  -->
+<!-- ============================================ -->
+<section id="hukum" class="relative py-20 sm:py-28 bg-dots">
+<div class="absolute bottom-0 right-1/4 w-80 h-80 bg-red-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 relative">
+<div class="reveal text-center mb-14">
+<span class="inline-block px-3 py-1 rounded-full bg-amber-400/10 text-amber-400 text-sm font-semibold mb-4 border border-amber-400/20"><i class="fa-solid fa-gavel mr-1"></i> Kesadaran Hukum</span>
+<h2 class="section-title text-3xl sm:text-4xl md:text-5xl text-forest-50 mb-2">Hukum & Regulasi</h2>
+<div class="section-divider mx-auto"></div>
+<p class="text-forest-200/70 text-lg max-w-3xl mx-auto">Indonesia memiliki kerangka hukum yang kuat untuk melindungi hutan. Bagian ini bertujuan mengedukasi masyarakat agar memahami bahwa <strong class="text-amber-400">menebang pohon, membakar hutan, atau merusak kawasan hutan lindung adalah tindak pidana</strong> dengan sanksi berat.</p>
+</div>
+
+<!-- Peringatan Besar -->
+<div class="reveal mb-12">
+<div class="bg-gradient-to-r from-red-900/40 to-red-800/20 border-2 border-red-500/40 rounded-2xl p-6 sm:p-8 text-center">
+<i class="fa-solid fa-scale-balanced text-red-400 text-4xl mb-4"></i>
+<h3 class="font-display font-bold text-2xl sm:text-3xl text-red-300 mb-3">Deforestasi Ilegal = Tindak Pidana</h3>
+<p class="text-forest-200/80 max-w-2xl mx-auto">Setiap orang yang secara sadar melakukan penebangan pohon di kawasan hutan tanpa izin, membakar hutan, atau mengkonversi hutan lindung dapat dipidana <strong class="text-red-300">penjara maksimal 15 tahun</strong> dan <strong class="text-red-300">denda maksimal Rp 10 miliar</strong>. Tidak ada alasan ketidaktahuan yang membebaskan dari hukum.</p>
+</div>
+</div>
+
+<!-- Dasar Hukum -->
+<div class="reveal mb-12">
+<h3 class="font-display font-bold text-2xl text-forest-50 mb-6 flex items-center gap-3"><i class="fa-solid fa-file-lines text-amber-400"></i> Dasar Hukum Perlindungan Hutan</h3>
+<div class="grid lg:grid-cols-2 gap-4">
+<div class="law-card">
+<div class="flex items-center gap-3 mb-3">
+<span class="px-2 py-0.5 bg-amber-400/10 text-amber-400 text-xs font-bold rounded">UU Kehutanan</span>
+<h4 class="font-bold text-forest-50">UU No. 41 Tahun 1999</h4>
+</div>
+<p class="text-forest-200/70 text-sm leading-relaxed mb-3">Undang-undang dasar yang mengatur tentang kehutanan di Indonesia. Menetapkan klasifikasi hutan (hutan lindung, hutan produksi, hutan konservasi), hak masyarakat adat, dan sanksi pidana bagi pelanggar.</p>
+<div class="penalty-box">
+<p class="text-amber-400 text-sm font-bold mb-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Pasal 78:</p>
+<p class="text-forest-200/70 text-xs">Penebangan pohon di hutan tanpa izin: pidana penjara <strong class="text-amber-400">min. 1 tahun, maks. 10 tahun</strong> dan denda min. Rp 500 juta, maks. <strong class="text-amber-400">Rp 5 miliar</strong>.</p>
+</div>
+</div>
+<div class="law-card">
+<div class="flex items-center gap-3 mb-3">
+<span class="px-2 py-0.5 bg-amber-400/10 text-amber-400 text-xs font-bold rounded">Konservasi</span>
+<h4 class="font-bold text-forest-50">UU No. 5 Tahun 1990</h4>
+</div>
+<p class="text-forest-200/70 text-sm leading-relaxed mb-3">Konservasi Sumber Daya Alam Hayati dan Ekosistemnya. Melindungi spesies langka dan ekosistem kritis termasuk hutan tropis Kalimantan. Mengatur kawasan suaka alam dan cagar alam.</p>
+<div class="penalty-box">
+<p class="text-amber-400 text-sm font-bold mb-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Pasal 21 & 40:</p>
+<p class="text-forest-200/70 text-xs">Perburuan, perusakan, atau perdagangan satwa dan tumbuhan dilindungi: pidana penjara <strong class="text-amber-400">maks. 5 tahun</strong> dan denda <strong class="text-amber-400">maks. Rp 100 juta</strong>.</p>
+</div>
+</div>
+<div class="law-card">
+<div class="flex items-center gap-3 mb-3">
+<span class="px-2 py-0.5 bg-amber-400/10 text-amber-400 text-xs font-bold rounded">PPLH</span>
+<h4 class="font-bold text-forest-50">UU No. 32 Tahun 2009</h4>
+</div>
+<p class="text-forest-200/70 text-sm leading-relaxed mb-3">Perlindungan dan Pengelolaan Lingkungan Hidup. Memperkuat mekanisme perlindungan hutan dari perspektif lingkungan hidup, termasuk kewajiban AMDAL dan tanggung jawab korporasi.</p>
+<div class="penalty-box">
+<p class="text-amber-400 text-sm font-bold mb-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Pasal 98 & 99:</p>
+<p class="text-forest-200/70 text-xs">Perusakan ekosistem/lingkungan yang menimbulkan kerugian: pidana penjara <strong class="text-amber-400">maks. 10 tahun</strong> dan denda <strong class="text-amber-400">maks. Rp 10 miliar</strong>. Korporasi dikenakan denda <strong class="text-amber-400">maks. Rp 15 miliar</strong>.</p>
+</div>
+</div>
+<div class="law-card">
+<div class="flex items-center gap-3 mb-3">
+<span class="px-2 py-0.5 bg-amber-400/10 text-amber-400 text-xs font-bold rounded">Cipta Kerja</span>
+<h4 class="font-bold text-forest-50">UU No. 6 Tahun 2023 (Ciptaker)</h4>
+</div>
+<p class="text-forest-200/70 text-sm leading-relaxed mb-3">Perubahan atas UU Cipta Kerja yang mengatur perizinan kehutanan dan penggunaan kawasan hutan. Tetap mempertahankan sanksi pidana bagi pelanggaran kehutanan namun mengubah mekanisme perizinan.</p>
+<div class="penalty-box">
+<p class="text-amber-400 text-sm font-bold mb-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Pasal 115-118:</p>
+<p class="text-forest-200/70 text-xs">Penggunaan kawasan hutan tanpa izin: pidana penjara <strong class="text-amber-400">maks. 5 tahun</strong> dan denda <strong class="text-amber-400">maks. Rp 5 miliar</strong>. Penebangan liar: pidana penjara <strong class="text-amber-400">maks. 10 tahun</strong> dan denda <strong class="text-amber-400">maks. Rp 10 miliar</strong>.</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Sanksi Ringkasan -->
+<div class="reveal mb-12">
+<h3 class="font-display font-bold text-2xl text-forest-50 mb-6 flex items-center gap-3"><i class="fa-solid fa-handcuffs text-red-400"></i> Ringkasan Sanksi Pidana</h3>
+<div class="overflow-x-auto">
+<table class="w-full text-sm border-collapse">
+<thead>
+<tr class="border-b border-forest-600/40">
+<th class="text-left py-3 px-4 text-amber-400 font-bold">Tindakan</th>
+<th class="text-left py-3 px-4 text-amber-400 font-bold">Dasar Hukum</th>
+<th class="text-left py-3 px-4 text-red-400 font-bold">Penjara</th>
+<th class="text-left py-3 px-4 text-red-400 font-bold">Denda</th>
+</tr>
+</thead>
+<tbody class="text-forest-200/70">
+<tr class="border-b border-forest-600/20"><td class="py-3 px-4">Penebangan pohon tanpa izin</td><td class="py-3 px-4">UU 41/1999 Ps.78</td><td class="py-3 px-4 text-red-300 font-semibold">1-10 tahun</td><td class="py-3 px-4 text-red-300 font-semibold">Rp500jt-Rp5M</td></tr>
+<tr class="border-b border-forest-600/20"><td class="py-3 px-4">Membakar hutan</td><td class="py-3 px-4">UU 32/2009 Ps.98</td><td class="py-3 px-4 text-red-300 font-semibold">3-10 tahun</td><td class="py-3 px-4 text-red-300 font-semibold">Rp3M-Rp10M</td></tr>
+<tr class="border-b border-forest-600/20"><td class="py-3 px-4">Perusakan hutan lindung</td><td class="py-3 px-4">UU 41/1999 Ps.78</td><td class="py-3 px-4 text-red-300 font-semibold">3-10 tahun</td><td class="py-3 px-4 text-red-300 font-semibold">Rp1M-Rp5M</td></tr>
+<tr class="border-b border-forest-600/20"><td class="py-3 px-4">Penggunaan kawasan hutan tanpa izin</td><td class="py-3 px-4">UU 6/2023 Ps.115</td><td class="py-3 px-4 text-red-300 font-semibold">Maks. 5 tahun</td><td class="py-3 px-4 text-red-300 font-semibold">Maks. Rp5M</td></tr>
+<tr class="border-b border-forest-600/20"><td class="py-3 px-4">Perusakan ekosistem (korporasi)</td><td class="py-3 px-4">UU 32/2009 Ps.99</td><td class="py-3 px-4 text-red-300 font-semibold">Maks. 10 tahun</td><td class="py-3 px-4 text-red-300 font-semibold">Maks. Rp15M</td></tr>
+<tr><td class="py-3 px-4">Perdagangan tumbuhan dilindungi</td><td class="py-3 px-4">UU 5/1990 Ps.40</td><td class="py-3 px-4 text-red-300 font-semibold">Maks. 5 tahun</td><td class="py-3 px-4 text-red-300 font-semibold">Maks. Rp100jt</td></tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<!-- Hukum Adat & Laporan -->
+<div class="reveal">
+<div class="grid md:grid-cols-2 gap-6">
+<div class="bg-forest-800/60 border border-forest-600/30 rounded-xl p-6">
+<div class="flex items-center gap-3 mb-4">
+<i class="fa-solid fa-people-roof text-amber-400 text-xl"></i>
+<h4 class="font-bold text-forest-50 text-lg">Hukum Adat Masyarakat Hukum Adat</h4>
+</div>
+<p class="text-forest-200/70 text-sm leading-relaxed mb-3">Masyarakat adat di Kaltim seperti Suku Dayak memiliki hukum adat yang mengatur penggunaan hutan secara berkelanjutan. UU 41/1999 Pasal 2 dan Putusan MK No. 35/PUU-X/2012 mengakui hak masyarakat adat atas hutan adat.</p>
+<p class="text-forest-200/70 text-sm leading-relaxed">Pelanggaran terhadap hukum adat — seperti menebang pohon tertentu tanpa ritual izin, atau masuk ke kawasan yang dilindungi adat — dapat dikenakan sanksi adat berupa denda adat (bawah tanah), pengusiran, atau sanksi sosial lainnya yang berlaku dalam komunitas.</p>
+</div>
+<div class="bg-gradient-to-br from-amber-400/5 to-forest-800/60 border border-amber-400/20 rounded-xl p-6">
+<div class="flex items-center gap-3 mb-4">
+<i class="fa-solid fa-phone-volume text-amber-400 text-xl"></i>
+<h4 class="font-bold text-forest-50 text-lg">Cara Melaporkan Pelanggaran</h4>
+</div>
+<p class="text-forest-200/70 text-sm leading-relaxed mb-3">Jika Anda menyaksikan aktivitas penebangan liar, pembakaran hutan, atau perusakan kawasan hutan lindung, segera laporkan ke:</p>
+<ul class="text-forest-200/70 text-sm space-y-2">
+<li class="flex items-start gap-2"><i class="fa-solid fa-check text-amber-400 mt-1 text-xs"></i><span><strong class="text-forest-50">KLHK (Kementerian LHK):</strong> 021-8438177 atau @sarahklhk</span></li>
+<li class="flex items-start gap-2"><i class="fa-solid fa-check text-amber-400 mt-1 text-xs"></i><span><strong class="text-forest-50">Polisi Kehutanan (Polhut):</strong> Melayani laporan di tingkat daerah</span></li>
+<li class="flex items-start gap-2"><i class="fa-solid fa-check text-amber-400 mt-1 text-xs"></i><span><strong class="text-forest-50">Dinas Kehutanan Provinsi Kaltim:</strong> (0541) 741057</span></li>
+<li class="flex items-start gap-2"><i class="fa-solid fa-check text-amber-400 mt-1 text-xs"></i><span><strong class="text-forest-50">WALHI Kaltim:</strong> Organisasi lingkungan yang menerima pengaduan masyarakat</span></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SECTION 5: PERPUSTAKAAN VIDEO                -->
+<!-- ============================================ -->
+<section id="video" class="relative py-20 sm:py-28" style="background:linear-gradient(180deg,var(--bg) 0%,var(--bg-light) 50%,var(--bg) 100%)">
+<div class="max-w-7xl mx-auto px-4 sm:px-6">
+<div class="reveal text-center mb-12">
+<span class="inline-block px-3 py-1 rounded-full bg-red-500/10 text-red-400 text-sm font-semibold mb-4 border border-red-500/20"><i class="fa-solid fa-play mr-1"></i> Media Edukasi</span>
+<h2 class="section-title text-3xl sm:text-4xl md:text-5xl text-forest-50 mb-2">Perpustakaan Video</h2>
+<div class="section-divider mx-auto"></div>
+<p class="text-forest-200/70 text-lg max-w-2xl mx-auto">Kumpulan video edukatif tentang ekosistem Kalimantan, spesies pohon, dampak deforestasi, dan upaya konservasi yang dapat menjadi sumber pembelajaran interaktif.</p>
+</div>
+
+<!-- Grid Video -->
+<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10" id="videoGrid">
+<!-- Diisi JavaScript -->
+</div>
+
+<!-- Tombol YouTube -->
+<div class="reveal text-center">
+<a href="https://youtube.com/@tuxedoo-e5p?si=XZhjajo5lyNOWH4B" target="_blank" rel="noopener noreferrer" class="btn-primary text-lg px-8 py-4" style="animation:pulseGlow 2s ease-in-out infinite">
+<i class="fa-brands fa-youtube text-2xl"></i> Kunjungi Channel YouTube Kami
+</a>
+<p class="text-forest-200/50 text-sm mt-3">Subscribe untuk konten edukasi terbaru setiap minggu</p>
+</div>
+</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SECTION 6: SIMULASI DAMPAK                   -->
+<!-- ============================================ -->
+<section id="simulasi" class="relative py-20 sm:py-28 bg-dots">
+<div class="absolute top-1/3 left-0 w-72 h-72 bg-red-500/5 rounded-full blur-[100px] pointer-events-none"></div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 relative">
+<div class="reveal text-center mb-12">
+<span class="inline-block px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-sm font-semibold mb-4 border border-cyan-500/20"><i class="fa-solid fa-chart-line mr-1"></i> Simulasi Interaktif</span>
+<h2 class="section-title text-3xl sm:text-4xl md:text-5xl text-forest-50 mb-2">Proyeksi Dampak Deforestasi</h2>
+<div class="section-divider mx-auto"></div>
+<p class="text-forest-200/70 text-lg max-w-3xl mx-auto">Gunakan simulasi di bawah ini untuk melihat bagaimana laju deforestasi saat ini akan mempengaruhi Kalimantan Timur hingga tahun 2050. <strong class="text-amber-400">Tekan tombol "Putar" untuk memulai animasi.</strong></p>
+</div>
+
+<!-- Kontrol Simulasi -->
+<div class="reveal bg-forest-800/60 border border-forest-600/30 rounded-xl p-4 sm:p-6 mb-8">
+<div class="flex flex-wrap items-center gap-3 mb-4">
+<button id="btnPlay" class="btn-primary px-5" onclick="toggleSimulation()">
+<i class="fa-solid fa-play" id="playIcon"></i> <span id="playText">Putar</span>
+</button>
+<button class="chart-control" onclick="resetSimulation()"><i class="fa-solid fa-rotate-left mr-1"></i> Reset</button>
+<div class="h-6 w-px bg-forest-600 mx-1"></div>
+<span class="text-forest-200/60 text-sm">Kecepatan:</span>
+<button class="chart-control speed-btn active" data-speed="1" onclick="setSpeed(1)">1x</button>
+<button class="chart-control speed-btn" data-speed="2" onclick="setSpeed(2)">2x</button>
+<button class="chart-control speed-btn" data-speed="4" onclick="setSpeed(4)">4x</button>
+</div>
+<div class="flex flex-wrap items-center gap-3">
+<span class="text-forest-200/60 text-sm">Skenario:</span>
+<button class="chart-control scenario-btn active" data-scenario="bau" onclick="setScenario('bau')">Bisnis Seperti Biasa</button>
+<button class="chart-control scenario-btn" data-scenario="moderat" onclick="setScenario('moderat')">Moderat</button>
+<button class="chart-control scenario-btn" data-scenario="konservasi" onclick="setScenario('konservasi')">Konservasi Aktif</button>
+</div>
+<!-- Tahun saat ini -->
+<div class="mt-4 flex items-center gap-3">
+<span class="text-forest-200/60 text-sm">Tahun:</span>
+<div class="flex-1 h-2 bg-forest-900 rounded-full overflow-hidden">
+<div id="yearBar" class="h-full bg-gradient-to-r from-amber-400 to-red-500 rounded-full transition-all duration-300" style="width:0%"></div>
+</div>
+<span id="yearDisplay" class="font-display font-bold text-amber-400 text-lg min-w-[4ch]">2024</span>
+</div>
+</div>
+
+<!-- Grafik -->
+<div class="grid lg:grid-cols-2 gap-6 mb-8">
+<div class="reveal bg-forest-800/60 border border-forest-600/30 rounded-xl p-4 sm:p-6">
+<h4 class="font-bold text-forest-50 mb-4 flex items-center gap-2"><i class="fa-solid fa-tree text-emerald-400"></i> Luas Hutan Tersisa (Juta Ha)</h4>
+<div class="relative" style="height:300px"><canvas id="chartForest"></canvas></div>
+</div>
+<div class="reveal bg-forest-800/60 border border-forest-600/30 rounded-xl p-4 sm:p-6">
+<h4 class="font-bold text-forest-50 mb-4 flex items-center gap-2"><i class="fa-solid fa-paw text-orange-400"></i> Spesies Terancam Punah (Unit)</h4>
+<div class="relative" style="height:300px"><canvas id="chartSpecies"></canvas></div>
+</div>
+<div class="reveal bg-forest-800/60 border border-forest-600/30 rounded-xl p-4 sm:p-6">
+<h4 class="font-bold text-forest-50 mb-4 flex items-center gap-2"><i class="fa-solid fa-cloud text-cyan-400"></i> Emisi CO2 (Juta Ton/Tahun)</h4>
+<div class="relative" style="height:300px"><canvas id="chartCO2"></canvas></div>
+</div>
+<div class="reveal bg-forest-800/60 border border-forest-600/30 rounded-xl p-4 sm:p-6">
+<h4 class="font-bold text-forest-50 mb-4 flex items-center gap-2"><i class="fa-solid fa-temperature-high text-red-400"></i> Kenaikan Suhu Rata-rata (derajat C)</h4>
+<div class="relative" style="height:300px"><canvas id="chartTemp"></canvas></div>
+</div>
+</div>
+
+<!-- Insight Box -->
+<div class="reveal" id="insightBox">
+<div class="bg-gradient-to-r from-amber-400/10 to-forest-800/60 border border-amber-400/20 rounded-xl p-6 text-center">
+<i class="fa-solid fa-lightbulb text-amber-400 text-2xl mb-3"></i>
+<p class="text-forest-200/80 text-lg" id="insightText">Tekan tombol "Putar" untuk melihat proyeksi dampak deforestasi terhadap Kalimantan Timur dari tahun 2024 hingga 2050.</p>
+</div>
+</div>
+</div>
+</section>
+
+<!-- FOOTER -->
+<footer class="border-t border-forest-600/30 py-12" style="background:var(--forest-950,#081510)">
+<div class="max-w-7xl mx-auto px-4 sm:px-6">
+<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
+<div>
+<div class="flex items-center gap-2 mb-4">
+<div class="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center">
+<i class="fa-solid fa-leaf text-forest-900 text-sm"></i>
+</div>
+<span class="font-display font-bold text-lg text-amber-400">TUXEDO</span>
+</div>
+<p class="text-forest-200/50 text-sm leading-relaxed">Platform edukasi digital untuk meningkatkan literasi ekosistem dan kesadaran pencegahan deforestasi di Kalimantan Timur.</p>
+</div>
+<div>
+<h4 class="font-bold text-forest-50 mb-4">Navigasi</h4>
+<ul class="space-y-2 text-forest-200/50 text-sm">
+<li><a href="#beranda" class="hover:text-amber-400 transition-colors">Beranda</a></li>
+<li><a href="#deforestasi" class="hover:text-amber-400 transition-colors">Deforestasi</a></li>
+<li><a href="#spesies" class="hover:text-amber-400 transition-colors">Spesies Pohon</a></li>
+<li><a href="#hukum" class="hover:text-amber-400 transition-colors">Hukum & Regulasi</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-bold text-forest-50 mb-4">Media</h4>
+<ul class="space-y-2 text-forest-200/50 text-sm">
+<li><a href="#video" class="hover:text-amber-400 transition-colors">Video Edukasi</a></li>
+<li><a href="#simulasi" class="hover:text-amber-400 transition-colors">Simulasi Dampak</a></li>
+<li><a href="https://youtube.com/@tuxedoo-e5p?si=XZhjajo5lyNOWH4B" target="_blank" class="hover:text-amber-400 transition-colors"><i class="fa-brands fa-youtube mr-1"></i> YouTube</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-bold text-forest-50 mb-4">Kontak & Laporan</h4>
+<ul class="space-y-2 text-forest-200/50 text-sm">
+<li><i class="fa-solid fa-phone text-amber-400/60 mr-2"></i>KLHK: 021-8438177</li>
+<li><i class="fa-solid fa-phone text-amber-400/60 mr-2"></i>Polhut Kaltim: (0541) 741057</li>
+<li><i class="fa-solid fa-envelope text-amber-400/60 mr-2"></i>info@tuxedo-kaltim.id</li>
+</ul>
+</div>
+</div>
+<div class="border-t border-forest-600/20 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+<p class="text-forest-200/40 text-sm">&copy; 2025 TUXEDO — Tanda Pengenal Tumbuhan Pintar. Dibuat untuk edukasi masyarakat.</p>
+<p class="text-forest-200/30 text-xs">Implementasi sinergi Tanda Pengenal Tumbuhan Pintar dan Website Edukasi dalam Meningkatkan Literasi Ekosistem</p>
+</div>
+</div>
+</footer>
+
+<!-- MODAL SPESIES -->
+<div class="modal-overlay" id="speciesModal">
+<div class="modal-content">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-display font-bold text-xl text-forest-50" id="modalTitle">Detail Spesies</h3>
+<button onclick="closeModal()" class="w-8 h-8 rounded-lg bg-forest-900 flex items-center justify-center text-forest-200/60 hover:text-amber-400 transition-colors" aria-label="Tutup">
+<i class="fa-solid fa-xmark"></i>
+</button>
+</div>
+<div id="modalBody"></div>
+</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+<p class="text-forest-50 text-sm" id="toastText"></p>
+</div>
+
+<script>
+/* ============================================
+   DATA SPESIES POHON KALTIM
+   ============================================ */
+const speciesData = [
+    {
+        nama: "Ulin (Besi)",
+        ilmiah: "Eusideroxylon zwageri",
+        famili: "Lauraceae",
+        status: "Kritis (CR)",
+        statusColor: "#ef4444",
+        habitat: "Hutan tropis dataran rendah & perbukitan",
+        tinggi: "30-50 meter",
+        manfaat: "Kayu konstruksi berat (jembatan, tiang, rel kereta api), bahan bangunan tahan air, obat tradisional kulit batang.",
+        deskripsi: "Ulin atau kayu besi adalah spesies pohon legendaris Kalimantan dengan kepadatan kayu tertinggi di Asia Tenggara. Kayunya begitu keras dan berat sehingga tenggelam di air. Umur pohon ulin bisa mencapai 1000 tahun. Saat ini statusnya sangat kritis akibat eksploitasi berlebihan selama puluhan tahun.",
+        img: "https://blue.kumparan.com/image/upload/fl_progressive,fl_lossy,c_fill,f_auto,q_auto:best,w_640/v1634025439/01jhpz2bcgjk80ht8wqv6yq939.jpg"
+    },
+    {
+        nama: "Meranti",
+        ilmiah: "Shorea spp.",
+        famili: "Dipterocarpaceae",
+        status: "Rentan (VU)",
+        statusColor: "#f97316",
+        habitat: "Hutan dataran rendah hingga 700 m dpl",
+        tinggi: "40-70 meter",
+        manfaat: "Kayu serbaguna (plywood, furniture, konstruksi), getah untuk damar, penghasil biji tengkawang.",
+        deskripsi: "Meranti adalah genus paling dominan di hutan Kalimantan dengan lebih dari 100 spesies. Pohon-pohon tinggi ini membentuk kanopi utama hutan tropis dan merupakan habitat penting bagi orangutan. Kayu meranti sangat diminati industri sehingga menjadi salah satu target utama penebangan liar.",
+        img: "https://www.lantai-kayu.co.id/wp-content/uploads/2021/11/pohon-meranti.jpg"
+    },
+    {
+        nama: "Kapur",
+        ilmiah: "Dryobalanops aromatica",
+        famili: "Dipterocarpaceae",
+        status: "Rentan (VU)",
+        statusColor: "#f97316",
+        habitat: "Hutan dipterokarp dataran rendah",
+        tinggi: "50-60 meter",
+        manfaat: "Kayu konstruksi & lantai, kapur barus alami dari getah, bahan parfum tradisional.",
+        deskripsi: "Pohon kapur dikenal karena menghasilkan kapur barus alami (camphor) yang memiliki aroma khas dan digunakan dalam pengobatan tradisional. Pohon ini bisa tumbuh sangat tinggi dengan batang lurus sempurna. Hutan kapur di Kalimantan semakin menyusut akibat konversi lahan.",
+        img: "https://pertanian.uma.ac.id/wp-content/uploads/2022/09/Manfaat-Tanaman-Kapur-yang-Tidak-Populer-Tapi-Jadi-Incaran.jpg"
+    },
+    {
+        nama: "Gaharu",
+        ilmiah: "Aquilaria malaccensis",
+        famili: "Thymelaeaceae",
+        status: "Kritis (CR)",
+        statusColor: "#ef4444",
+        habitat: "Hutan primer & sekunder dataran rendah",
+        tinggi: "15-25 meter",
+        manfaat: "Resin gaharu untuk parfum, dupa, obat tradisional. Harga gaharu kualitas tinggi mencapai jutaan rupiah per kg.",
+        deskripsi: "Gaharu menghasilkan resin beraroma eksotis yang merupakan bahan parfum termahal di dunia. Resin ini hanya terbentuk sebagai respons terhadap infeksi jamur pada batang pohon. Permintaan global yang tinggi mendorong penebangan liar masif, menjadikan spesies ini sangat terancam.",
+        img: "https://www.indonesia.travel/contentassets/1af76e3cecba4962b6a5980e78652882/pohon-gaharu.jpg"
+    },
+    {
+        nama: "Ramin",
+        ilmiah: "Gonystylus bancanus",
+        famili: "Thymelaeaceae",
+        status: "Rentan (VU)",
+        statusColor: "#f97316",
+        habitat: "Hutan rawa gambut & dataran rendah",
+        tinggi: "30-45 meter",
+        manfaat: "Kayu lemari, furniture mewah, tiang bilik, olahan kayu halus.",
+        deskripsi: "Ramin adalah spesies khas hutan rawa gambut Kalimantan. Kayunya berwarna putih kekuningan dengan serat halus, sangat cocok untuk furniture dan kayu olahan. Draining kanal gambut untuk perkebunan sawit menghancurkan habitat alami ramin secara masif.",
+        img: "https://www.indonesia.travel/contentassets/98159949d32743f4b8e1337a08c7cf48/jcr_content-22.jpg"
+    },
+    {
+        nama: "Tengkawang",
+        ilmiah: "Shorea stenoptera",
+        famili: "Dipterocarpaceae",
+        status: "Rentan (VU)",
+        statusColor: "#f97316",
+        habitat: "Hutan dataran rendah Kalimantan",
+        tinggi: "30-50 meter",
+        manfaat: "Biji tengkawang menghasilkan minyak berkualitas tinggi (setara cokelat), dimakan langsung, bahan kosmetik.",
+        deskripsi: "Tengkawang merupakan 'kakao-nya Kalimantan'. Bijinya menghasilkan minyak tengkawang yang digunakan dalam industri makanan dan kosmetik. Masyarakat Dayak telah memanfaatkan tengkawang selama berabad-abad. Deforestasi mengancam pasokan dan keberlangsungan pohon ini.",
+        img: "https://ik.imagekit.io/goodid/gnfi/uploads/articles/large-1-tengkawang-fd561b267347fd7f01c78af3d660dda8.jpg?tr=w-1200,h-675,fo-center"
+    },
+    {
+        nama: "Kempas",
+        ilmiah: "Koompassia malaccensis",
+        famili: "Fabaceae",
+        status: "Rentan (VU)",
+        statusColor: "#f97316",
+        habitat: "Hutan dataran rendah & riparian",
+        tinggi: "45-60 meter",
+        manfaat: "Kayu lantai, konstruksi berat, bantalan rel, papan partikel.",
+        deskripsi: "Kempas adalah pohon emergent yang menjulang di atas kanopi hutan. Kayunya sangat keras dan tahan lama, digunakan secara luas dalam konstruksi. Pohon kempas juga penting secara ekologis sebagai penghubung koridor satwa liar di sepanjang tepian sungai.",
+        img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTeYHzMhAYkuwIvzUUTPzfLJporftmfAjJguw&s"
+    },
+    {
+        nama: "Jelutung",
+        ilmiah: "Dyera costulata",
+        famili: "Apocynaceae",
+        status: "Tidak Terancam (LC)",
+        statusColor: "#22c55e",
+        habitat: "Hutan primer dataran rendah",
+        tinggi: "40-60 meter",
+        manfaat: "Getah jelutung untuk pengganti karet, kayu pulpa, pensil, batang korek api.",
+        deskripsi: "Jelutung dikenal sebagai penghasil getah berkualitas yang pernah menjadi komoditas ekspor penting Kaltim. Meski status konservasinya relatif aman, populasi di habitat alami terus menurun. Pohon ini juga berperan penting dalam menjaga keseimbangan air di ekosistem hutan.",
+        img: "https://yiari.or.id/wp-content/uploads/2024/10/1-1-67203cb963e40.jpg"
+    },
+    {
+        nama: "Agathis (Damar)",
+        ilmiah: "Agathis borneensis",
+        famili: "Araucariaceae",
+        status: "Rentan (VU)",
+        statusColor: "#f97316",
+        habitat: "Hutan pegunungan & dataran tinggi Kaltim",
+        tinggi: "40-65 meter",
+        manfaat: "Kayu damar untuk plywood & furniture, resin damar untuk pernis dan obat.",
+        deskripsi: "Agathis atau damar Borneo adalah pohon konifer tropis langka yang hanya ditemukan di Kalimantan. Merupakan fosil hidup dari keluarga Araucariaceae yang sudah ada sejak zaman dinosaur. Populasinya sangat terbatas dan terfragmentasi akibat deforestasi.",
+        img: "https://klikhijau.com/read/presiden-jokowi-pm-belanda-dan-perihal-pohon-damar-yang-menawan/"
+    },
+    {
+        nama: "Pulai",
+        ilmiah: "Alstonia scholaris",
+        famili: "Apocynaceae",
+        status: "Tidak Terancam (LC)",
+        statusColor: "#22c55e",
+        habitat: "Hutan sekunder, tepi jalan, perkebunan",
+        tinggi: "20-40 meter",
+        manfaat: "Kayu ringan untuk ukiran & papan, getah untuk obat tradisional (demam, disentri), pohon peneduh.",
+        deskripsi: "Pulai sering ditemui di sekitar pemukiman dan jalan di Kaltim. Kayunya sangat ringan dan mudah dibentuk, cocok untuk ukiran tradisional Dayak. Daun dan getahnya digunakan dalam pengobatan tradisional. Pohon ini toleran terhadap kondisi terbuka sehingga mudah ditemukan.",
+        img: "https://deorchids.com/wp-content/uploads/2022/07/Manfaat-Pohon-Pulai.jpg"
+    },
+    {
+        nama: "Mahang",
+        ilmiah: "Macaranga spp.",
+        famili: "Euphorbiaceae",
+        status: "Tidak Terancam (LC)",
+        statusColor: "#22c55e",
+        habitat: "Hutan sekunder, area terbuka, tepian sungai",
+        tinggi: "10-20 meter",
+        manfaat: "Penunjuk hutan sekunder, pionir regenerasi hutan, habitat semut-simbiosis, kayu bakar.",
+        deskripsi: "Mahang adalah kelompok pohon pionir yang pertama tumbuh di lahan terbuka setelah hutan terbuka. Keberadaan mahang menandakan proses regenerasi alami sedang berlangsung. Spesies ini memiliki hubungan simbiosis unik dengan semut yang melindungi pohon dari herbivora.",
+        img: "https://geoparkmatano-dev.luwutimurkab.go.id/wp-content/uploads/2025/07/Mahang-Macaranga-spp-878x675.jpg"
+    },
+    {
+        nama: "Nyatoh",
+        ilmiah: "Palaquium spp.",
+        famili: "Sapotaceae",
+        status: "Rentan (VU)",
+        statusColor: "#f97316",
+        habitat: "Hutan dataran rendah & perbukitan",
+        tinggi: "30-50 meter",
+        manfaat: "Kayu furniture premium, getah nyatoh untuk permen & bahan makanan, buah yang dapat dimakan.",
+        deskripsi: "Nyatoh menghasilkan kayu berwarna merah kecokelatan yang sangat diminati untuk furniture berkualitas tinggi. Getahnya yang manis dapat dimakan langsung atau diolah menjadi permen tradisional. Buah nyatoh juga menjadi sumber pangan bagi satwa liar dan masyarakat adat.",
+        img: "https://indomgb.s3.amazonaws.com/wp-content/uploads/2022/05/22024839/Pohon-Nyatoh-menjadi-flora-identitas-Provinsi-Kepulauan-Bangka-Belitung.-Foto-Shellia-Gladia-.jpg"
+    }
+];
+
+/* ============================================
+   DATA VIDEO
+   ============================================ */
+const videoData = [
+    {
+      judul: "Hutan Kita Sekarat — Siapa yang Bertanggung Jawab?",
+     durasi: "4:01", 
+       desc: "Ini bukan tentang pohon. Ini tentang kita", 
+        img: "deforestasi.png" ,
+        link: "https://youtu.be/zAWz9Yc7OUk?si=0AN5j_A-Q7kKN-xf" ,
+    },
+
+    {
+         judul: "Ulin: Kayu Besi yang Terancam Punah",
+     durasi: "8:47", 
+       desc: "Kisah pohon ulin, keistimewaannya, dan ancaman yang dihadapinya.", 
+        img: "https://picsum.photos/seed/vid-ulin-tree/400/225" ,
+        
+    },
+
+    {
+         judul: "Dampak Deforestasi terhadap Iklim Lokal", 
+     durasi: "15:22", 
+       desc: "Bagaimana hilangnya hutan mengubah pola cuaca dan suhu di Kaltim.", 
+        img: "https://picsum.photos/seed/vid-iklim-impact/400/225" ,
+       
+    },
+
+    { 
+        judul: "Hukum Kehutanan yang Wajib Kamu Tahu", 
+     durasi: "11:05", 
+       desc: "Penjelasan UU Kehutanan dan sanksi bagi pelaku deforestasi ilegal.", 
+        img: "https://picsum.photos/seed/vid-hukum-hutan/400/225" ,
+       
+    },
+
+    { 
+        judul: "Orangutan dan Habitat yang Hilang", 
+     durasi: "13:18", 
+       desc: "Dampak deforestasi terhadap populasi orangutan di Kalimantan.", 
+        img: "https://picsum.photos/seed/vid-orangutan/400/225",
+       
+     },
+
+    { 
+        judul: "Cara Melaporkan Penebangan Liar", 
+     durasi: "6:30", 
+      desc: "Panduan praktis melaporkan aktivitas penebangan liar ke pihak berwenang.", 
+       img: "https://picsum.photos/seed/vid-lapor-illegal/400/225",
+       
+    }
+];
+
+/* ============================================
+   RENDER SPESIES CARD
+   ============================================ */
+const speciesGrid = document.getElementById('speciesGrid');
+speciesData.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = 'tree-card reveal cursor-pointer';
+    card.onclick = () => openModal(i);
+    card.innerHTML = `
+        <div class="relative h-40 overflow-hidden">
+            <img src="${s.img}" alt="${s.nama}" class="w-full h-full object-cover transition-transform duration-500 hover:scale-110" loading="lazy">
+            <div class="absolute top-3 right-3 px-2 py-0.5 rounded text-xs font-bold" style="background:${s.statusColor}20;color:${s.statusColor};border:1px solid ${s.statusColor}40">${s.status}</div>
+            <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[#142e20] to-transparent"></div>
+        </div>
+        <div class="p-4">
+            <h4 class="font-bold text-forest-50 mb-0.5">${s.nama}</h4>
+            <p class="text-amber-400/70 text-xs italic mb-2">${s.ilmiah}</p>
+            <div class="flex items-center gap-2 text-forest-200/50 text-xs mb-2">
+                <span><i class="fa-solid fa-dna mr-1"></i>${s.famili}</span>
+                <span><i class="fa-solid fa-ruler-vertical mr-1"></i>${s.tinggi}</span>
+            </div>
+            <p class="text-forest-200/60 text-xs leading-relaxed line-clamp-2">${s.deskripsi}</p>
+            <div class="mt-3 flex items-center gap-1 text-amber-400 text-xs font-semibold">
+                <span>Lihat Detail</span><i class="fa-solid fa-arrow-right text-[10px]"></i>
+            </div>
+        </div>
+    `;
+    speciesGrid.appendChild(card);
+});
+
+/* ============================================
+   RENDER VIDEO CARD
+   ============================================ */
+const videoGrid = document.getElementById('videoGrid');
+
+videoData.forEach((v, i) => {
+    const card = document.createElement('div');
+    card.className = 'video-card reveal';
+
+    // isi card (HARUS di luar onclick)
+    card.innerHTML = `
+        <div class="relative h-44 overflow-hidden group">
+            <img src="${v.img}" alt="${v.judul}" class="w-full h-full object-cover">
+            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <div class="w-14 h-14 rounded-full bg-amber-400 flex items-center justify-center">
+                    ▶
+                </div>
+            </div>
+            <div class="absolute bottom-2 right-2 bg-black text-white text-xs px-2 py-1">
+                ${v.durasi}
+            </div>
+        </div>
+        <div class="p-4">
+            <h4>${v.judul}</h4>
+            <p>${v.desc}</p>
+        </div>
+    `;
+
+    // klik buka video
+    card.onclick = () => {
+        if (v.link) {
+            window.open(v.link, "_blank");
+        } else {
+            alert("Link belum ada");
+        }
+    };
+
+    videoGrid.appendChild(card);
+});
+
+/* ============================================
+   MODAL SPESIES
+   ============================================ */
+function openModal(idx) {
+    const s = speciesData[idx];
+    document.getElementById('modalTitle').textContent = s.nama;
+    document.getElementById('modalBody').innerHTML = `
+        <img src="${s.img}" alt="${s.nama}" class="w-full h-48 object-cover rounded-lg mb-4" loading="lazy">
+        <div class="flex flex-wrap gap-2 mb-4">
+            <span class="px-2 py-1 rounded text-xs font-bold" style="background:${s.statusColor}15;color:${s.statusColor};border:1px solid ${s.statusColor}30">${s.status}</span>
+            <span class="px-2 py-1 rounded text-xs font-semibold bg-forest-900 text-forest-200/70 border border-forest-600/30"><i class="fa-solid fa-dna mr-1"></i>${s.famili}</span>
+            <span class="px-2 py-1 rounded text-xs font-semibold bg-forest-900 text-forest-200/70 border border-forest-600/30"><i class="fa-solid fa-ruler-vertical mr-1"></i>${s.tinggi}</span>
+        </div>
+        <div class="mb-4">
+            <h5 class="font-bold text-amber-400 text-sm mb-1">Nama Ilmiah</h5>
+            <p class="text-forest-200/70 text-sm italic">${s.ilmiah}</p>
+        </div>
+        <div class="mb-4">
+            <h5 class="font-bold text-amber-400 text-sm mb-1">Habitat</h5>
+            <p class="text-forest-200/70 text-sm">${s.habitat}</p>
+        </div>
+        <div class="mb-4">
+            <h5 class="font-bold text-amber-400 text-sm mb-1">Deskripsi</h5>
+            <p class="text-forest-200/70 text-sm leading-relaxed">${s.deskripsi}</p>
+        </div>
+        <div class="penalty-box">
+            <h5 class="font-bold text-amber-400 text-sm mb-1"><i class="fa-solid fa-hand-holding-heart mr-1"></i>Manfaat</h5>
+            <p class="text-forest-200/70 text-sm leading-relaxed">${s.manfaat}</p>
+        </div>
+    `;
+    document.getElementById('speciesModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+    document.getElementById('speciesModal').classList.remove('show');
+    document.body.style.overflow = '';
+}
+document.getElementById('speciesModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+
+/* ============================================
+   TOAST
+   ============================================ */
+function showToast(text) {
+    const t = document.getElementById('toast');
+    document.getElementById('toastText').textContent = text;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ============================================
+   MOBILE MENU
+   ============================================ */
+function toggleMobile() {
+    document.getElementById('mobileMenu').classList.toggle('open');
+    document.getElementById('mobileOverlay').classList.toggle('open');
+}
+
+/* ============================================
+   NAVBAR SCROLL
+   ============================================ */
+const navbar = document.getElementById('navbar');
+const navLinks = document.querySelectorAll('.nav-link');
+const sections = document.querySelectorAll('section[id]');
+
+window.addEventListener('scroll', () => {
+    /* Navbar background */
+    if (window.scrollY > 50) {
+        navbar.classList.add('nav-fixed');
+    } else {
+        navbar.classList.remove('nav-fixed');
+    }
+    /* Active link */
+    let current = '';
+    sections.forEach(s => {
+        const top = s.offsetTop - 120;
+        if (window.scrollY >= top) current = s.id;
+    });
+    navLinks.forEach(l => {
+        l.classList.remove('active');
+        if (l.dataset.section === current) l.classList.add('active');
+    });
+});
+
+/* ============================================
+   SCROLL REVEAL (IntersectionObserver)
+   ============================================ */
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+        if (e.isIntersecting) {
+            e.target.classList.add('visible');
+        }
+    });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+/* ============================================
+   COUNTER ANIMATION
+   ============================================ */
+const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+        if (e.isIntersecting && !e.target.dataset.counted) {
+            e.target.dataset.counted = 'true';
+            const target = parseFloat(e.target.dataset.count);
+            const duration = 2000;
+            const start = performance.now();
+            const step = (now) => {
+                const elapsed = now - start;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                const val = target * eased;
+                e.target.textContent = target % 1 === 0 ? Math.round(val).toLocaleString('id-ID') : val.toFixed(1);
+                if (progress < 1) requestAnimationFrame(step);
+                else e.target.textContent = target % 1 === 0 ? target.toLocaleString('id-ID') + '+' : target.toFixed(1) + ' jt';
+            };
+            requestAnimationFrame(step);
+        }
+    });
+}, { threshold: 0.5 });
+document.querySelectorAll('[data-count]').forEach(el => counterObserver.observe(el));
+
+/* ============================================
+   HERO CANVAS — PARTIKEL DAUN
+   ============================================ */
+(function() {
+    const canvas = document.getElementById('hero-canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H;
+    const leaves = [];
+    const LEAF_COUNT = 35;
+
+    function resize() {
+        W = canvas.width = canvas.parentElement.offsetWidth;
+        H = canvas.height = canvas.parentElement.offsetHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    /* Buat partikel daun */
+    const colors = ['#d4a843', '#3d5a27', '#5c6e3a', '#a8832e', '#8a7a54'];
+    for (let i = 0; i < LEAF_COUNT; i++) {
+        leaves.push({
+            x: Math.random() * W,
+            y: Math.random() * H - H,
+            size: 3 + Math.random() * 5,
+            speedY: 0.3 + Math.random() * 0.8,
+            speedX: -0.3 + Math.random() * 0.6,
+            rot: Math.random() * Math.PI * 2,
+            rotSpeed: (Math.random() - 0.5) * 0.03,
+            opacity: 0.15 + Math.random() * 0.35,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            wobbleAmp: 20 + Math.random() * 40,
+            wobbleSpeed: 0.005 + Math.random() * 0.01,
+            wobblePhase: Math.random() * Math.PI * 2
+        });
+    }
+
+    let time = 0;
+    function animate() {
+        ctx.clearRect(0, 0, W, H);
+        time++;
+        leaves.forEach(l => {
+            l.y += l.speedY;
+            l.x += l.speedX + Math.sin(time * l.wobbleSpeed + l.wobblePhase) * 0.5;
+            l.rot += l.rotSpeed;
+            if (l.y > H + 20) { l.y = -20; l.x = Math.random() * W; }
+            if (l.x > W + 20) l.x = -20;
+            if (l.x < -20) l.x = W + 20;
+
+            ctx.save();
+            ctx.translate(l.x, l.y);
+            ctx.rotate(l.rot);
+            ctx.globalAlpha = l.opacity;
+            ctx.fillStyle = l.color;
+            /* Gambar bentuk daun sederhana (elips miring) */
+            ctx.beginPath();
+            ctx.ellipse(0, 0, l.size, l.size * 0.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
+        requestAnimationFrame(animate);
+    }
+    animate();
+})();
+
+/* ============================================
+   SIMULASI GRAFIK INTERAKTIF
+   ============================================ */
+const YEARS = [];
+for (let y = 2024; y <= 2050; y++) YEARS.push(y);
+
+/* Fungsi pembuat data skenario */
+function generateScenario(type) {
+    const forest = [], species = [], co2 = [], temp = [];
+    let f, sp, c, t;
+    for (let i = 0; i < YEARS.length; i++) {
+        const year = YEARS[i];
+        const p = i / (YEARS.length - 1); // 0..1
+        if (type === 'bau') {
+            f = 6.8 - p * 4.2 + Math.sin(p * 3) * 0.15;
+            sp = 180 + p * 320 + p * p * 200;
+            c = 85 + p * 180 + Math.sin(p * 4) * 8;
+            t = 0.3 + p * 1.8 + p * p * 0.5;
+        } else if (type === 'moderat') {
+            f = 6.8 - p * 1.8 + Math.sin(p * 2) * 0.2;
+            sp = 180 + p * 120 + p * p * 40;
+            c = 85 + p * 60 + Math.sin(p * 3) * 5;
+            t = 0.3 + p * 0.9 + p * p * 0.15;
+        } else {
+            f = 6.8 - p * 0.5 + Math.sin(p * 2) * 0.3 + p * p * 0.8;
+            sp = 180 + p * 40 - p * p * 20;
+            c = 85 + p * 15 - p * p * 25;
+            t = 0.3 + p * 0.4 - p * p * 0.1;
+        }
+        forest.push(Math.max(0.5, parseFloat(f.toFixed(2))));
+        species.push(Math.max(100, Math.round(sp)));
+        co2.push(Math.max(20, parseFloat(c.toFixed(1))));
+        temp.push(Math.max(0, parseFloat(t.toFixed(2))));
+    }
+    return { forest, species, co2, temp };
+}
+
+const scenarios = {
+    bau: generateScenario('bau'),
+    moderat: generateScenario('moderat'),
+    konservasi: generateScenario('konservasi')
+};
+
+/* Insight teks per skenario */
+const insights = {
+    bau: [
+        "Pada skenario Bisnis Seperti Biasa, hutan Kaltim diperkirakan tinggal {f} juta hektar pada tahun {y} — berkurang lebih dari 60% dari kondisi saat ini.",
+        "Spesies terancam punah meningkat drastis menjadi {s} unit. Kehilangan habitat akan mendorong kepunahan massal yang tidak dapat dipulihkan.",
+        "Emisi CO2 dari deforestasi mencapai {c} juta ton per tahun. Indonesia berisiko gagal memenuhi komitmen Paris Agreement.",
+        "Kenaikan suhu rata-rata sebesar {t}°C akan mengubah iklim Kaltim secara fundamental. Kekeringan dan banjir ekstrem menjadi normal."
+    ],
+    moderat: [
+        "Skenario Moderat memproyeksikan sisa hutan {f} juta hektar. Penurunan masih terjadi tapi lebih terkendali berkat kebijakan yang lebih baik.",
+        "{s} spesies masih terancam, namun laju kepunahan lebih lambat. Upaya konservasi parsial memberikan ruang bagi beberapa spesies untuk bertahan.",
+        "Emisi CO2 terkontrol di {c} juta ton/tahun. Diperlukan upaya lebih agresif untuk mencapai net-zero.",
+        "Kenaikan suhu {t}°C masih signifikan namun memberikan lebih banyak waktu untuk adaptasi ekosistem dan masyarakat."
+    ],
+    konservasi: [
+        "Skenario Konservasi Aktif justru menunjukkan pemulihan hutan menjadi {f} juta hektar. Rehabilitasi dan perlindungan efektif membalikkan tren deforestasi.",
+        "Hanya {s} spesies yang terancam, dan jumlahnya menurun seiring pemulihan habitat. Populasi orangutan dan satwa kunci mulai stabil.",
+        "Emisi CO2 turun menjadi {c} juta ton/tahun berkat penyerapan karbon oleh hutan yang tumbuh kembali. Kontribusi positif bagi iklim global.",
+        "Kenaikan suhu terbatas pada {t}°C. Hutan yang sehat membantu menjaga mikroiklim dan melindungi ketersediaan air."
+    ]
+};
+
+/* Chart.js Setup */
+Chart.defaults.color = '#b8a882';
+Chart.defaults.borderColor = 'rgba(45,80,22,0.2)';
+Chart.defaults.font.family = "'Source Sans 3', sans-serif";
+
+const chartOpts = (label, color, yMin, yMax) => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: { duration: 300 },
+    plugins: { legend: { display: false }, tooltip: { backgroundColor: '#142e20', borderColor: '#d4a843', borderWidth: 1, titleColor: '#f0ebe3', bodyColor: '#b8a882', padding: 10, cornerRadius: 8 } },
+    scales: {
+        x: { grid: { display: false }, ticks: { maxTicksLimit: 8, font: { size: 11 } } },
+        y: { min: yMin, max: yMax, grid: { color: 'rgba(45,80,22,0.15)' }, ticks: { font: { size: 11 } } }
+    },
+    elements: { point: { radius: 0, hoverRadius: 5, backgroundColor: color, borderWidth: 2 }, line: { tension: 0.3, borderWidth: 2.5 } }
+});
+
+function makeDataset(data, color) {
+    return {
+        label: '',
+        data: [],
+        borderColor: color,
+        backgroundColor: color + '15',
+        fill: true
+    };
+}
+
+const chartForest = new Chart(document.getElementById('chartForest'), {
+    type: 'line',
+    data: { labels: [], datasets: [makeDataset([], '#22c55e')] },
+    options: chartOpts('Hutan', '#22c55e', 0, 8)
+});
+const chartSpecies = new Chart(document.getElementById('chartSpecies'), {
+    type: 'line',
+    data: { labels: [], datasets: [makeDataset([], '#f97316')] },
+    options: chartOpts('Spesies', '#f97316', 100, 700)
+});
+const chartCO2 = new Chart(document.getElementById('chartCO2'), {
+    type: 'bar',
+    data: { labels: [], datasets: [{ label: '', data: [], backgroundColor: '#06b6d460', borderColor: '#06b6d4', borderWidth: 1, borderRadius: 4 }] },
+    options: { ...chartOpts('CO2', '#06b6d4', 0, 300), elements: {} }
+});
+const chartTemp = new Chart(document.getElementById('chartTemp'), {
+    type: 'line',
+    data: { labels: [], datasets: [makeDataset([], '#ef4444')] },
+    options: chartOpts('Suhu', '#ef4444', 0, 3)
+});
+
+/* State simulasi */
+let simState = {
+    playing: false,
+    currentIdx: 0,
+    speed: 1,
+    scenario: 'bau',
+    interval: null
+};
+
+function updateCharts(idx) {
+    const data = scenarios[simState.scenario];
+    const labels = YEARS.slice(0, idx + 1);
+    
+    chartForest.data.labels = labels;
+    chartForest.data.datasets[0].data = data.forest.slice(0, idx + 1);
+    chartForest.update('none');
+
+    chartSpecies.data.labels = labels;
+    chartSpecies.data.datasets[0].data = data.species.slice(0, idx + 1);
+    chartSpecies.update('none');
+
+    chartCO2.data.labels = labels;
+    chartCO2.data.datasets[0].data = data.co2.slice(0, idx + 1);
+    chartCO2.update('none');
+
+    chartTemp.data.labels = labels;
+    chartTemp.data.datasets[0].data = data.temp.slice(0, idx + 1);
+    chartTemp.update('none');
+
+    /* Update UI */
+    const pct = (idx / (YEARS.length - 1)) * 100;
+    document.getElementById('yearBar').style.width = pct + '%';
+    document.getElementById('yearDisplay').textContent = YEARS[idx];
+
+    /* Update insight setiap 5 tahun atau di akhir */
+    if (idx % 5 === 0 || idx === YEARS.length - 1) {
+        updateInsight(idx);
+    }
+}
+
+function updateInsight(idx) {
+    const data = scenarios[simState.scenario];
+    const arr = insights[simState.scenario];
+    const insightIdx = Math.min(Math.floor(idx / 7), arr.length - 1);
+    let text = arr[insightIdx];
+    text = text.replace('{f}', data.forest[idx]);
+    text = text.replace('{s}', data.species[idx]);
+    text = text.replace('{c}', data.co2[idx]);
+    text = text.replace('{t}', data.temp[idx]);
+    text = text.replace('{y}', YEARS[idx]);
+    document.getElementById('insightText').textContent = text;
+}
+
+function toggleSimulation() {
+    if (simState.playing) {
+        pauseSim();
+    } else {
+        playSim();
+    }
+}
+
+function playSim() {
+    if (simState.currentIdx >= YEARS.length - 1) {
+        simState.currentIdx = 0; // Ulangi dari awal
+    }
+    simState.playing = true;
+    document.getElementById('playIcon').className = 'fa-solid fa-pause';
+    document.getElementById('playText').textContent = 'Jeda';
+    
+    const delay = Math.max(50, 500 / simState.speed);
+    simState.interval = setInterval(() => {
+        if (simState.currentIdx < YEARS.length - 1) {
+            simState.currentIdx++;
+            updateCharts(simState.currentIdx);
+        } else {
+            pauseSim();
+        }
+    }, delay);
+}
+
+function pauseSim() {
+    simState.playing = false;
+    clearInterval(simState.interval);
+    document.getElementById('playIcon').className = 'fa-solid fa-play';
+    document.getElementById('playText').textContent = 'Putar';
+}
+
+function resetSimulation() {
+    pauseSim();
+    simState.currentIdx = 0;
+    updateCharts(0);
+    document.getElementById('insightText').textContent = 'Tekan tombol "Putar" untuk melihat proyeksi dampak deforestasi terhadap Kalimantan Timur dari tahun 2024 hingga 2050.';
+}
+
+function setSpeed(s) {
+    simState.speed = s;
+    document.querySelectorAll('.speed-btn').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.speed) === s);
+    });
+    if (simState.playing) {
+        pauseSim();
+        playSim();
+    }
+}
+
+function setScenario(s) {
+    simState.scenario = s;
+    document.querySelectorAll('.scenario-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.scenario === s);
+    });
+    /* Reset dan update tampilan */
+    pauseSim();
+    simState.currentIdx = 0;
+    updateCharts(0);
+    
+    const names = { bau: 'Bisnis Seperti Biasa', moderat: 'Moderat', konservasi: 'Konservasi Aktif' };
+    const colors = { bau: '#ef4444', moderat: '#f97316', konservasi: '#22c55e' };
+    
+    /* Update warna garis berdasarkan skenario */
+    const color = colors[s];
+    chartForest.data.datasets[0].borderColor = '#22c55e';
+    chartForest.data.datasets[0].backgroundColor = '#22c55e15';
+    chartSpecies.data.datasets[0].borderColor = '#f97316';
+    chartSpecies.data.datasets[0].backgroundColor = '#f9731615';
+    chartCO2.data.datasets[0].backgroundColor = '#06b6d460';
+    chartCO2.data.datasets[0].borderColor = '#06b6d4';
+    chartTemp.data.datasets[0].borderColor = '#ef4444';
+    chartTemp.data.datasets[0].backgroundColor = '#ef444415';
+    
+    document.getElementById('insightText').textContent = `Skenario "${names[s]}" dipilih. Tekan "Putar" untuk melihat proyeksi.`;
+}
+
+/* Inisialisasi chart kosong */
+updateCharts(0);
+
+/* ============================================
+   KEYBOARD: ESC untuk tutup modal
+   ============================================ */
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeModal();
+});
+</script>
+</body>
+</html>
